@@ -4,6 +4,7 @@
   "description": "Web Crawler",
   "main": "spiderbot.js",
   "scripts": {
+    "start": "node spiderbot.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "AxDu",
