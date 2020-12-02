@@ -1,6 +1,7 @@
 class Link{
-    constructor(url){
-        this.url = url
+    constructor(url, depth){
+        this.url = url,
+        this.depth = depth
     }
 }
 module.exports = { Link }

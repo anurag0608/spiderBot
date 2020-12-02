@@ -1,9 +1,12 @@
 const axios = require("axios"),
     cheerio = require("cheerio"),
-    {Link} = require('./Link')
+    randomUserAgent = require('random-useragent'),
+    {Link} = require('./Link'),
+    util = require('util'),
+    sleep = util.promisify(setTimeout)
 
-async function findAllLinks(url, linkArr){
-    let page = await axios.get(url).catch(err=> { throw err})
+async function findAllLinks(url, linkArr, currDepth){
+    let page = await axios.get(url, { headers:{'User-Agent': randomUserAgent.getRandom() }}).catch(err=> { throw err})
         const $ = cheerio.load(page.data)
         const anchors = $('a')
         // Getting titles, headings and bold texts //
@@ -20,15 +23,14 @@ async function findAllLinks(url, linkArr){
             title: $('title').text(),
             meta
         }
-        console.log(index)
-        
+        // console.log(index)
         let count = 0
         $(anchors).each(function(i, anchor){
             let string = $(anchor).attr('href')
             if(string){
                 if(string[0]=='/') string = url + $(anchor).attr('href')
                 if(string!='#'){
-                    linkArr.push(new Link(string))
+                    linkArr.push(new Link(string, currDepth+1))
                     count++
                 }
             }
@@ -42,16 +44,37 @@ const display = (links)=>{
         console.log(link)
     })
 }
-async function main(){
-    let Urls = ["https://in.bookmyshow.com/","https://www.pvrcinemas.com/","https://www.blu-ray.com/","https://www.youtube.com/"]
-    let links = []
-    for(let i=0;i<Urls.length;i++){
-        let url = Urls[i]
-        if(url[url.length-1]=='/') url = url.slice(0, url.length-1)
-        await findAllLinks(url, links).catch(err=>console.log("Error : " + err))
-    }
+async function crawlBFS(){
+    let Urls = ["http://lite.cnn.com/en"]
+    let pendingLinks = []
+    pendingLinks.push(new Link(Urls[0], 0))
+    let visited = []
+    let max_depth = 2
+    while(pendingLinks.length!=0 ){
+        
+            let linkObj = pendingLinks.shift()
+            let currDepth = linkObj.depth
+            let url = linkObj.url
+            if(url[url.length-1]=='/') url = url.slice(0, url.length-1)
 
-    // display(links)
+            // craw if the url is not visited
+            
+            if(visited[url]!=1 && currDepth < max_depth){
+                console.log(`Crawling : ${url} at depth ${currDepth}`)
+                await findAllLinks(url, pendingLinks, currDepth)
+                .then(()=>{
+                    visited[url] = 1
+                }).catch(err=>{
+                    console.log("Error : " + err.code)
+                })
+            }
+            let minWait = 500
+            let maxWait = 2000
+            let waitTime = Math.floor((Math.random() * maxWait) + minWait)
+            await sleep(waitTime)
+    }
+    display(pendingLinks)
+    console.log(visited)
 }
 
-main()
+crawlBFS()
