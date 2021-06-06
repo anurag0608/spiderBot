@@ -1,10 +1,18 @@
 const axios = require("axios"),
     cheerio = require("cheerio"),
     randomUserAgent = require('random-useragent'),
+    mongoose = require('mongoose'),
     {Link} = require('./Link'),
     fetch = require('node-fetch'),
     util = require('util'),
     sleep = util.promisify(setTimeout)
+/// CONNECT TO DB ///
+const Page = require('./models/page')
+mongoose.connect('mongodb://localhost:27017/SearchEngine',{
+   useNewUrlParser: true,
+   useCreateIndex: true,
+   useUnifiedTopology: true 
+});
 
 async function findAllLinks(url, linkArr, currDepth){
     let page = await axios.get(url, 
@@ -16,19 +24,23 @@ async function findAllLinks(url, linkArr, currDepth){
         const $ = cheerio.load(page.data)
         const anchors = $('a')
         // Getting titles, headings and bold texts //
-        const pageTitle = $('title');
+        const pageTitle = $('title').text();
         let keywords = ""
         if($('meta[name="keywords"]').attr('content')!=undefined) keywords = $('meta[name="keywords"]').attr('content')
-
-        let meta = {
-            keywords,
-            description : $('meta[name="description"]').attr('content')
+        Obj = {
+            title: pageTitle,
+            keywords: keywords,
+            description: $('meta[name="description"]').attr('content'),
+            url: url
         }
-        let index = {
-            title: $('title').text(),
-            meta
-        }
-        console.log(index)
+        Page.create(Obj, (err, new_page)=>{
+            if(err){
+                console.log(err.code);
+            }else{
+                console.log("Page Created");
+                console.log(new_page)
+            }
+        })
         let count = 0
         $(anchors).each(function(i, anchor){
             let string = $(anchor).attr('href')
@@ -49,28 +61,8 @@ const display = (links)=>{
         console.log(link)
     })
 }
-// async function get_proxies(proxies){
-//     let url = "https://free-proxy-list.net/"
-//     let page = await axios.get(url).catch(err=> { throw err})
-//     const $ = cheerio.load(page.data)
-//     let port_numbers = []
-//     let ip_addresses = []
-//     const tbody = $('tbody')
-//     let i=0
-
-//     $("td:nth-child(1)").each(function(index, value) {
-//         ip_addresses[index] = $(this).text();
-//     });
-
-//     $("td:nth-child(2)").each(function(index, value) {
-//         port_numbers[index] = $(this).text();
-//     });
-//     port_numbers = port_numbers.slice(0,250)
-//     ip_addresses = ip_addresses.slice(0,250)
-//     return {port_numbers, ip_addresses}
-// }
 async function crawlBFS(){
-    let Urls = ["https://edition.cnn.com/"]
+    let Urls = ["https://www.forbes.com/"]
     let pendingLinks = []
     pendingLinks.push(new Link(Urls[0], 0))
     let visited = []
