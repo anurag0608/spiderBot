@@ -49,26 +49,6 @@ const display = (links)=>{
         console.log(link)
     })
 }
-// async function get_proxies(proxies){
-//     let url = "https://free-proxy-list.net/"
-//     let page = await axios.get(url).catch(err=> { throw err})
-//     const $ = cheerio.load(page.data)
-//     let port_numbers = []
-//     let ip_addresses = []
-//     const tbody = $('tbody')
-//     let i=0
-
-//     $("td:nth-child(1)").each(function(index, value) {
-//         ip_addresses[index] = $(this).text();
-//     });
-
-//     $("td:nth-child(2)").each(function(index, value) {
-//         port_numbers[index] = $(this).text();
-//     });
-//     port_numbers = port_numbers.slice(0,250)
-//     ip_addresses = ip_addresses.slice(0,250)
-//     return {port_numbers, ip_addresses}
-// }
 async function crawlBFS(){
     let Urls = ["https://edition.cnn.com/"]
     let pendingLinks = []
