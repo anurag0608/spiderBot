@@ -6,7 +6,7 @@ const axios = require("axios"),
     util = require('util'),
     sleep = util.promisify(setTimeout)
 
-async function findAllLinks(url, linkArr, currDepth){
+async function findAllLinks(url, linkArr, currDepth, visited){
     let page = await axios.get(url, 
         { 
             headers:{
@@ -34,8 +34,9 @@ async function findAllLinks(url, linkArr, currDepth){
             let string = $(anchor).attr('href')
             if(string){
                 if(string[0]=='/') string = url + $(anchor).attr('href')
-                if(string!='#' && !(string.includes("facebook.com") || string.includes("twitter.com") || string.includes("instagram.com")) ){
+                if(visited[string]!=1 && string!='#' && !(string.includes("facebook.com") || string.includes("twitter.com") || string.includes("instagram.com")) ){
                     linkArr.push(new Link(string, currDepth+1))
+                    visited[string] = 1
                     count++
                 }
             }
@@ -54,6 +55,7 @@ async function crawlBFS(){
     let pendingLinks = []
     pendingLinks.push(new Link(Urls[0], 0))
     let visited = []
+    visited[Urls[0]] = 1
     let max_depth = 3
     while(pendingLinks.length!=0 ){
         
@@ -66,10 +68,8 @@ async function crawlBFS(){
             
             if(visited[url]!=1 && currDepth < max_depth){
                 console.log(`Crawling : ${url} at depth ${currDepth}`)
-                await findAllLinks(url, pendingLinks, currDepth)
-                .then(()=>{
-                    visited[url] = 1
-                }).catch(err=>{
+                await findAllLinks(url, pendingLinks, currDepth, visited)
+                .catch(err=>{
                     console.log("Error : " + err.code)
                 })
             }
